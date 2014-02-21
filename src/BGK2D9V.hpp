@@ -80,7 +80,7 @@ template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::output(FILE* fp){
 	for(std::size_t x=0; x<N; x++){
 		for(std::size_t y=0; y<M; y++){
-			std::fprintf(fp,"%ld\t%ld\t%e\t%e\t%e\n", 
+			std::fprintf(fp,"%lu\t%lu\t%e\t%e\t%e\n", 
 					x, y, u(x,y), v(x,y), rho(x,y));
 		}
 	}
@@ -124,8 +124,8 @@ inline double BGK2D9V<N,M>::feq(std::size_t a,std::size_t x,std::size_t y) const
 	const double cdotu = C[a][0]*u(x,y) + C[a][1]*v(x,y);
 	return E[a]*rho(x,y)*(
 			1. + 
-			+ 3.*(C[a][0]*u(x,y) + C[a][1]*v(x,y))
-			+ 9./2.* cdotu * cdotu
+			+ 3.*cdotu
+			+ 9./2.*cdotu*cdotu
 			- 3./2.*(u(x,y)*u(x,y)+v(x,y)*v(x,y))
 			);
 }
@@ -139,7 +139,9 @@ inline double BGK2D9V<N,M>::feq(std::size_t a,std::size_t x,std::size_t y) const
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::collision(){
 	std::size_t x;
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
 	for(x=0; x<N; x++){
 		for(std::size_t y=0; y<M; y++){
 			for(std::size_t a=0; a<A; a++){
@@ -174,6 +176,10 @@ inline void BGK2D9V<N,M>::streaming(Field<double,N,M,1> ff[A]){
 	}
 }
 
+
+/**
+ * 巨視的変数の計算
+ */
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::macros(){
 	std::size_t x;
@@ -221,14 +227,14 @@ inline void BGK2D9V<N,M>::boundary(){
 			+ f[4+A](x0,y) - f[4+A](xL,y)
 			);
 		//左端
-		f[1](x0,y) = f[1+A](xL,y) + c;
-		f[5](x0,y) = f[5+A](xL,y) + c/4.;
-		f[8](x0,y) = f[8+A](xL,y) + c/4.;
+		f[1](x0,y) = f[1](xL,y) + c;
+		f[5](x0,y) = f[5](xL,y) + c/4.;
+		f[8](x0,y) = f[8](xL,y) + c/4.;
 
 		//右端
-		f[3](xL,y) = f[3+A](x0,y) - c;
-		f[6](xL,y) = f[6+A](x0,y) - c/4.;
-		f[7](xL,y) = f[7+A](x0,y) - c/4.;
+		f[3](xL,y) = f[3](x0,y) - c;
+		f[6](xL,y) = f[6](x0,y) - c/4.;
+		f[7](xL,y) = f[7](x0,y) - c/4.;
 	}
 
 	//固定壁 at 上
