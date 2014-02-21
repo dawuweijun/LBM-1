@@ -1,18 +1,18 @@
-PROG=lbm
+TARGET=lbm
 SRC=main.cpp 
 HEADERS=$(wildcard %.h,%.hpp)
 OBJS=$(patsubst %.cpp,%.o,$(SRC))
 DEPENDS=$(patsubst %.cpp,vstream%.d,$(SRC))
 LIBS= 
 INCLUDE= 
-FLAGS= -fopenmp -O2
+FLAGS= -fopenmp -O2 -Wall
 
 
 CC=g++ -std=c++0x
 
 CC+= $(FLAGS) $(INCLUDE) $(LIBS)
 
-$(PROG): $(OBJS)
+$(TARGET): $(OBJS)
 	$(CC) -o $@ $(OBJS)
 
 .cpp.o: $(HEADERS)
@@ -20,7 +20,7 @@ $(PROG): $(OBJS)
 
 .PHONY : clean depend
 clean:
-	-$(RM) $(PROG) $(OBJS) $(DEPENDS)
+	-$(RM) $(TARGET) $(OBJS) $(DEPENDS)
 
 %.d: %.cpp %.hpp
 	@set -e; $(CC) -MM $(CPPFLAGS) $< \

@@ -80,7 +80,7 @@ template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::output(FILE* fp){
 	for(std::size_t x=0; x<N; x++){
 		for(std::size_t y=0; y<M; y++){
-			std::fprintf(fp,"%d\t%d\t%e\t%e\t%e\n", 
+			std::fprintf(fp,"%ld\t%ld\t%e\t%e\t%e\n", 
 					x, y, u(x,y), v(x,y), rho(x,y));
 		}
 	}
@@ -138,12 +138,12 @@ inline double BGK2D9V<N,M>::feq(std::size_t a,std::size_t x,std::size_t y) const
  */
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::collision(){
-	//double sum=0;
-	for(std::size_t x=0; x<N; x++){
+	std::size_t x;
+#pragma omp parallel for
+	for(x=0; x<N; x++){
 		for(std::size_t y=0; y<M; y++){
 			for(std::size_t a=0; a<A; a++){
 				f[a+A](x,y) = (1.-tau_inv)*f[a](x,y) + tau_inv*feq(a,x,y);
-	//			sum += -tau_inv*(f[a](x,y) - feq(a,x,y));
 			}
 		}
 	}
@@ -157,12 +157,17 @@ inline void BGK2D9V<N,M>::collision(){
  */
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::streaming(Field<double,N,M,1> ff[A]){
-	std::size_t x,y,a;
+//	std::size_t x,y,a;
 
+	std::size_t x;
 	//バルクからの移動
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
 	for(x=0; x<N; x++){
-		for(y=0; y<M; y++){
-			for(a=0; a<A; a++){
+		for(std::size_t y=0; y<M; y++){
+			for(std::size_t a=0; a<A; a++){
 				ff[a](x+C[a][0],y+C[a][1]) = ff[a+A](x,y);
 			}
 		}
@@ -171,7 +176,11 @@ inline void BGK2D9V<N,M>::streaming(Field<double,N,M,1> ff[A]){
 
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::macros(){
-	for(std::size_t x=0;x<N;x++){
+	std::size_t x;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+	for(x=0;x<N;x++){
 		for(std::size_t y=0;y<M;y++){
 			double rho_ = 0;	//密度のダミー変数
 			double ru_ = 0;		//運動量のダミー変数
@@ -199,7 +208,7 @@ inline void BGK2D9V<N,M>::macros(){
  */
 template<std::size_t N,std::size_t M>
 inline void BGK2D9V<N,M>::boundary(){
-	std::size_t x,y,a;
+	std::size_t x,y;
 
 	//周期境界 with 圧力勾配
 	const static double dp = 0.01;	//圧力差
