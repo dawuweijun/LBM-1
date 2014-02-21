@@ -5,20 +5,16 @@ OBJS=$(patsubst %.cpp,%.o,$(SRC))
 DEPENDS=$(patsubst %.cpp,vstream%.d,$(SRC))
 LIBS= 
 INCLUDE= 
-FLAGS= -fopenmp -O2 -Wall
-
+FLAGS= -Wall
 
 CC=g++ -std=c++0x
-
 CC+= $(FLAGS) $(INCLUDE) $(LIBS)
 
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $(OBJS)
-
-.cpp.o: $(HEADERS)
-	$(CC) $(CFLAGS) -c $<
-
-.PHONY : clean depend
+.PHONY : release debug clean depend
+release : CC+= -fopenmp -O2
+release : all
+debug : CC+= -g -O0
+debug : all
 clean:
 	-$(RM) $(TARGET) $(OBJS) $(DEPENDS)
 
@@ -27,3 +23,12 @@ clean:
 		| sed 's/\($*\)\.o[ :]*/\1.o $@ : /g' > $@; \
 		[ -s $@ ] || rm -f $@
 	-include $(DEPENDS)
+
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $@ $(OBJS)
+
+.cpp.o: $(HEADERS)
+	$(CC) $(CFLAGS) -c $<
